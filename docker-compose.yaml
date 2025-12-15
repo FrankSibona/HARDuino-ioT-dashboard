@@ -3,37 +3,44 @@ services:
     build: mocksensor
     volumes:
       - ./data/mocksensor:/tmp/
+
   emqx:
     user: root
     image: "emqx:4.4.3"
     ports:
-      - "18083:18083" 
+      - "127.0.0.1:18083:18083"  # Panel Admin: Solo accesible desde localhost (Seguridad)
+      - "1883:1883"              # Puerto MQTT: Abierto para que tus equipos conecten desde fuera
     volumes:
       - ./data/emqx/data:/opt/emqx/data
       - ./data/emqx/log:/opt/emqx/log
     environment:
-      - EMQX_DASHBOARD__DEFAULT_USER__LOGIN=manolo
-      - EMQX_DASHBOARD__DEFAULT_USER__PASSWORD=iotcrashcourse
+      - EMQX_DASHBOARD__DEFAULT_USER__LOGIN=${EMQX_USER}
+      - EMQX_DASHBOARD__DEFAULT_USER__PASSWORD=${EMQX_PASSWORD}
+
   telegrafinput:
     image: "telegraf:1.22.4"
     volumes:
       - ./data/telegrafinput/telegraf.conf:/etc/telegraf/telegraf.conf
       - ./data/mocksensor:/tmp/mocksensor
+    depends_on:
+      - emqx
+
   influxdb:
     image: "influxdb:2.2.0-alpine"
     ports: 
-      - "8086:8086"
+      - "127.0.0.1:8086:8086"    # Base de datos: Solo accesible desde localhost (Seguridad)
     volumes:
       - ./data/influxdb/data:/var/lib/influxdb2
       - ./data/influxdb/config:/etc/influxdb2
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=manolo
-      - DOCKER_INFLUXDB_INIT_PASSWORD=iotcrashcourse
-      - DOCKER_INFLUXDB_INIT_ORG=manolotech
-      - DOCKER_INFLUXDB_INIT_BUCKET=iotdata
-      - DOCKER_INFLUXDB_INIT_RETENTION=1w
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=manolotech-iotdata-auth-token
+      - DOCKER_INFLUXDB_INIT_USERNAME=${INFLUX_USER}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${INFLUX_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${INFLUX_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${INFLUX_BUCKET}
+      - DOCKER_INFLUXDB_INIT_RETENTION=${INFLUX_RETENTION}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
+
   telegrafoutput:
     image: "telegraf:1.22.4"
     deploy:
@@ -43,11 +50,15 @@ services:
         max_attempts: 20
     volumes:
       - ./data/telegrafoutput/telegraf.conf:/etc/telegraf/telegraf.conf
+    depends_on:
+      - influxdb
+      - emqx
+
   grafana:
     user: root
     image: "grafana/grafana:8.5.3"
     ports:
-      - "3000:3000"
+      - "3000:3000"              # Grafana: Abierto a todo internet (Protegido por login)
     environment:
       - GF_SECURITY_ADMIN_PASSWORD__FILE=/run/secrets/admin_password 
     volumes:
@@ -55,6 +66,9 @@ services:
     secrets:
       - source: grafana_admin_password
         target: /run/secrets/admin_password
+    depends_on:
+      - influxdb
+
 secrets: 
   grafana_admin_password:
     file: ./secrets/grafana_admin_password

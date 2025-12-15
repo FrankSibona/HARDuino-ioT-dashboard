@@ -44,11 +44,11 @@ def update_sensor_data(data):
     
     # Valores base calibrados (los que tú me pasaste)
     base_values = {
-        "caudal_entrada": 803.0,
-        "caudal_salida": 501.0,
+        "caudal_entrada": 108.0,
+        "caudal_salida": 58.0,
         "presion_entrada": 3.0,
-        "presion_membrana": 12.0,
-        "conductividad": 36.5
+        "presion_membrana": 14.0,
+        "conductividad": 45.5
     }
     
     analog_keys = list(base_values.keys())
@@ -82,15 +82,15 @@ def main():
     
     # Inicialización
     sensor_data = {
-        "device_id": "aabb1122",
+        "device_id": "porcinar",
         "client_id": "ddee3344",
         "sensor_type": "EstadoPlanta",
         # Valores iniciales
-        "caudal_entrada": 803.0,
-        "caudal_salida": 501.0,
+        "caudal_entrada": 108.0,
+        "caudal_salida": 58.0,
         "presion_entrada": 3.0,
-        "presion_membrana": 12.0,
-        "conductividad": 36.5,
+        "presion_membrana": 14.0,
+        "conductividad": 45.5,
         "flotante_tanque": 1,
         "flotante_cisterna": 1,
         "flotante_dosificador": 0,
